@@ -3,18 +3,18 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
 
-from handlers import register_handlers
-from config import BOT_TOKEN, REDIS_URL
+from handlers.appointment import register_appointment_handlers
+from config import BOT_TOKEN, REDIS_HOST, REDIS_PORT, REDIS_DB
 
 
 async def main():
     logging.basicConfig(level=logging.INFO)
 
     bot = Bot(token=BOT_TOKEN)
-    storage = RedisStorage2.from_url(REDIS_URL)
+    storage = RedisStorage2(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
     dp = Dispatcher(bot, storage=storage)
 
-    register_handlers(dp)
+    register_appointment_handlers(dp)
 
     try:
         await dp.start_polling()
