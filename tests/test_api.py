@@ -1,12 +1,15 @@
 import pytest
 from httpx import AsyncClient
-from app.main import app
-from app.database import Base, engine, SessionLocal
+
 from app import models
+from app.database import Base, SessionLocal, engine
+from app.main import app
+
 
 @pytest.fixture(scope="module")
 def anyio_backend():
-    return 'asyncio'
+    return "asyncio"
+
 
 @pytest.fixture(scope="module")
 def db_session():
@@ -16,12 +19,14 @@ def db_session():
     yield session
     session.close()
 
+
 @pytest.mark.anyio
 async def test_healthcheck():
     async with AsyncClient(app=app, base_url="http://test") as ac:
         response = await ac.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "healthy"}
+
 
 @pytest.mark.anyio
 async def test_create_and_get_appointment(db_session):
@@ -37,7 +42,7 @@ async def test_create_and_get_appointment(db_session):
             "patient_name": "Анна Иванова",
             "patient_phone": "+7-900-123-45-67",
             "start_time": "2025-07-04T10:00:00",
-            "end_time": "2025-07-04T10:30:00"
+            "end_time": "2025-07-04T10:30:00",
         }
 
         # Создаем запись
@@ -55,6 +60,7 @@ async def test_create_and_get_appointment(db_session):
         data = response.json()
         assert data["patient_name"] == "Анна Иванова"
 
+
 @pytest.mark.anyio
 async def test_uniqueness_constraint(db_session):
     async with AsyncClient(app=app, base_url="http://test") as ac:
@@ -69,7 +75,7 @@ async def test_uniqueness_constraint(db_session):
             "patient_name": "Пациент 1",
             "patient_phone": "+7-900-111-11-11",
             "start_time": "2025-07-05T11:00:00",
-            "end_time": "2025-07-05T11:30:00"
+            "end_time": "2025-07-05T11:30:00",
         }
         # Первая запись — успешна
         response = await ac.post("/appointments", json=appointment_data)

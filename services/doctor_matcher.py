@@ -1,5 +1,6 @@
-import aiohttp
 from datetime import datetime, timedelta
+
+import aiohttp
 
 API_BASE_URL = "http://localhost:8000"
 
@@ -17,19 +18,26 @@ async def find_available_doctors(specialty: str) -> list:
             all_doctors = await resp.json()
 
         # 2. Specialty bo‘yicha filter
-        matched_doctors = [d for d in all_doctors if d["specialty"].lower() == specialty.lower()]
+        matched_doctors = [
+            d for d in all_doctors if d["specialty"].lower() == specialty.lower()
+        ]
         available_doctors = []
 
         for doctor in matched_doctors:
             doctor_id = doctor["id"]
 
             # 3. Shu doctorning appointmentlarini olish
-            async with session.get(f"{API_BASE_URL}/appointments?doctor_id={doctor_id}") as resp:
+            async with session.get(
+                f"{API_BASE_URL}/appointments?doctor_id={doctor_id}"
+            ) as resp:
                 appointments = await resp.json()
 
             # 4. Band vaqtlar ro‘yxatini to‘plash
             busy_times = [
-                (datetime.fromisoformat(a["start_time"]), datetime.fromisoformat(a["end_time"]))
+                (
+                    datetime.fromisoformat(a["start_time"]),
+                    datetime.fromisoformat(a["end_time"]),
+                )
                 for a in appointments
             ]
 
@@ -44,13 +52,18 @@ async def find_available_doctors(specialty: str) -> list:
                 slot_end = current_time + timedelta(minutes=SLOT_DURATION_MINUTES)
 
                 # Check if this slot overlaps with any busy time
-                if not any(slot_start < b_end and slot_end > b_start for b_start, b_end in busy_times):
-                    free_slots.append({
-                        "id": doctor_id,
-                        "name": doctor["name"],
-                        "start_time": slot_start.strftime("%d июля %H:%M"),
-                        "end_time": slot_end.strftime("%d июля %H:%M")
-                    })
+                if not any(
+                    slot_start < b_end and slot_end > b_start
+                    for b_start, b_end in busy_times
+                ):
+                    free_slots.append(
+                        {
+                            "id": doctor_id,
+                            "name": doctor["name"],
+                            "start_time": slot_start.strftime("%d июля %H:%M"),
+                            "end_time": slot_end.strftime("%d июля %H:%M"),
+                        }
+                    )
 
                 current_time += timedelta(minutes=SLOT_DURATION_MINUTES)
 

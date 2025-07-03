@@ -1,18 +1,20 @@
-from fastapi import FastAPI, HTTPException, Depends, Query
-from sqlalchemy import orm
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
 
-from app.database import SessionLocal, engine, Base
-from app import models, schemas, crud
 import uvicorn
+from fastapi import Depends, FastAPI, HTTPException, Query
+from sqlalchemy import orm
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from app import crud, models, schemas
+from app.database import Base, SessionLocal, engine
 from app.models import Doctor
 
 orm.configure_mappers()
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Clinic API")
+
 
 def get_db():
     db = SessionLocal()
@@ -21,26 +23,35 @@ def get_db():
     finally:
         db.close()
 
+
 @app.on_event("startup")
 def startup_event():
-    from app.models import Doctor, Appointment  # to‘liq import qilsin
+    from app.models import Appointment, Doctor  # to‘liq import qilsin
+
     Base.metadata.create_all(bind=engine)
+
 
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
 
+
 # --- Appointments endpoints ---
 @app.post("/appointments", response_model=schemas.AppointmentResponse)
-def create_appointment_endpoint(appointment: schemas.AppointmentCreate, db: Session = Depends(get_db)):
+def create_appointment_endpoint(
+    appointment: schemas.AppointmentCreate, db: Session = Depends(get_db)
+):
     try:
         return crud.create_appointment(db, appointment)
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=400, detail="Doctor is already booked at this time")
+        raise HTTPException(
+            status_code=400, detail="Doctor is already booked at this time"
+        )
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/appointments/{appointment_id}", response_model=schemas.AppointmentResponse)
 def get_appointment_endpoint(appointment_id: int, db: Session = Depends(get_db)):
@@ -49,10 +60,11 @@ def get_appointment_endpoint(appointment_id: int, db: Session = Depends(get_db))
         raise HTTPException(status_code=404, detail="Appointment not found")
     return appointment
 
+
 @app.get("/appointments", response_model=List[schemas.AppointmentResponse])
 def get_appointments(
     doctor_id: Optional[int] = Query(None, description="ID врача (необязательно)"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     if doctor_id:
         return crud.get_appointments_by_doctor(db, doctor_id=doctor_id)
@@ -66,12 +78,14 @@ def get_appointments(
 def create_doctor_endpoint(doctor: schemas.DoctorCreate, db: Session = Depends(get_db)):
     return crud.create_doctor(db, doctor)
 
+
 @app.get("/doctors/{doctor_id}", response_model=schemas.DoctorResponse)
 def get_doctor_endpoint(doctor_id: int, db: Session = Depends(get_db)):
     doctor = crud.get_doctor(db, doctor_id)
     if doctor is None:
         raise HTTPException(status_code=404, detail="Doctor not found")
     return doctor
+
 
 @app.get("/doctors", response_model=List[schemas.DoctorResponse])
 def list_doctors(db: Session = Depends(get_db), skip: int = 0, limit: int = 100):

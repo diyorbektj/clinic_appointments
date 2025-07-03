@@ -1,8 +1,10 @@
-from sqlalchemy import Column, Integer, String, DateTime, UniqueConstraint, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy import (Column, DateTime, ForeignKey, Integer, String,
+                        UniqueConstraint)
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 
 Base = declarative_base()
+
 
 class Doctor(Base):
     __tablename__ = "doctors"
@@ -27,5 +29,5 @@ class Appointment(Base):
     doctor = relationship("Doctor", back_populates="appointments")
 
     __table_args__ = (
-        UniqueConstraint('doctor_id', 'start_time', name='unique_doctor_time'),
+        UniqueConstraint("doctor_id", "start_time", name="unique_doctor_time"),
     )

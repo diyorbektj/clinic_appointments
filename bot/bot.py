@@ -1,10 +1,11 @@
 import asyncio
 import logging
+
 from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
 
+from config import BOT_TOKEN, REDIS_DB, REDIS_HOST, REDIS_PORT
 from handlers.appointment import register_appointment_handlers
-from config import BOT_TOKEN, REDIS_HOST, REDIS_PORT, REDIS_DB
 
 
 async def main():
@@ -24,5 +25,5 @@ async def main():
         await bot.session.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

@@ -1,10 +1,11 @@
-from aiogram import types, Dispatcher
+from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from services.ai_analyzer import analyze_symptoms
-from services.doctor_matcher import find_available_doctors
 from services.appointment_api import create_appointment
+from services.doctor_matcher import find_available_doctors
+
 
 class AppointmentStates(StatesGroup):
     waiting_symptoms = State()
@@ -12,16 +13,25 @@ class AppointmentStates(StatesGroup):
     waiting_name = State()
     waiting_phone = State()
 
+
 def register_appointment_handlers(dp: Dispatcher):
     dp.register_message_handler(start_appointment, commands="start", state="*")
-    dp.register_message_handler(process_symptoms, state=AppointmentStates.waiting_symptoms)
-    dp.register_message_handler(process_doctor_choice, state=AppointmentStates.waiting_doctor_choice)
+    dp.register_message_handler(
+        process_symptoms, state=AppointmentStates.waiting_symptoms
+    )
+    dp.register_message_handler(
+        process_doctor_choice, state=AppointmentStates.waiting_doctor_choice
+    )
     dp.register_message_handler(process_name, state=AppointmentStates.waiting_name)
     dp.register_message_handler(process_phone, state=AppointmentStates.waiting_phone)
 
+
 async def start_appointment(message: types.Message):
-    await message.answer("👋 Привет! Я помогу записаться на прием к врачу. Расскажите, что вас беспокоит?")
+    await message.answer(
+        "👋 Привет! Я помогу записаться на прием к врачу. Расскажите, что вас беспокоит?"
+    )
     await AppointmentStates.waiting_symptoms.set()
+
 
 async def process_symptoms(message: types.Message, state: FSMContext):
     symptoms = message.text
@@ -44,6 +54,7 @@ async def process_symptoms(message: types.Message, state: FSMContext):
     await state.update_data(doctors=doctors)
     await AppointmentStates.waiting_doctor_choice.set()
 
+
 async def process_doctor_choice(message: types.Message, state: FSMContext):
     data = await state.get_data()
     doctors = data["doctors"]
@@ -59,21 +70,21 @@ async def process_doctor_choice(message: types.Message, state: FSMContext):
     await message.answer("Как вас зовут?")
     await AppointmentStates.waiting_name.set()
 
+
 async def process_name(message: types.Message, state: FSMContext):
     await state.update_data(name=message.text)
     await message.answer("Ваш номер телефона?")
     await AppointmentStates.waiting_phone.set()
+
 
 async def process_phone(message: types.Message, state: FSMContext):
     try:
         data = await state.get_data()
         phone = message.text
 
-        appointment = await create_appointment({
-            "doctor": data["doctor"],
-            "name": data["name"],
-            "phone": phone
-        })
+        appointment = await create_appointment(
+            {"doctor": data["doctor"], "name": data["name"], "phone": phone}
+        )
 
         await message.answer(
             f"✅ Запись создана!\n\n"
@@ -87,5 +98,3 @@ async def process_phone(message: types.Message, state: FSMContext):
 
     except Exception as e:
         await message.answer(f"❌ Ошибка при создании записи: {str(e)}")
-
-

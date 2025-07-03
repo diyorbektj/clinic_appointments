@@ -1,9 +1,11 @@
+import json
 import re
+from typing import Dict
 
 import aiohttp
-import json
-from typing import Dict
+
 from config import OPENAI_API_KEY
+
 
 def extract_json_from_markdown(text):
     # ```json va ``` orasidagi qismni ajratib olamiz
@@ -37,21 +39,19 @@ async def analyze_symptoms(symptoms: str) -> Dict[str, str]:
 
     headers = {
         "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
 
     data = {
         "model": "gpt-4o-mini",
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": 200,
-        "temperature": 0.3
+        "temperature": 0.3,
     }
 
     async with aiohttp.ClientSession() as session:
         async with session.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers=headers,
-                json=data
+            "https://api.openai.com/v1/chat/completions", headers=headers, json=data
         ) as response:
             result = await response.json()
             try:
@@ -64,7 +64,7 @@ async def analyze_symptoms(symptoms: str) -> Dict[str, str]:
                 return {
                     "specialty": "терапевт",
                     "urgency": "средний",
-                    "reasoning": "Общие симптомы, рекомендую терапевта"
+                    "reasoning": "Общие симптомы, рекомендую терапевта",
                 }
 
 
@@ -72,20 +72,14 @@ async def analyze_symptoms(symptoms: str) -> Dict[str, str]:
 SYMPTOM_RULES = {
     "болит сердце|боль в груди|давление": {
         "specialty": "кардиолог",
-        "urgency": "высокий"
+        "urgency": "высокий",
     },
     "головная боль|мигрень|головокружение": {
         "specialty": "невролог",
-        "urgency": "средний"
+        "urgency": "средний",
     },
-    "сыпь|зуд|прыщи": {
-        "specialty": "дерматолог",
-        "urgency": "низкий"
-    },
-    "температура|кашель|насморк|горло": {
-        "specialty": "терапевт",
-        "urgency": "средний"
-    }
+    "сыпь|зуд|прыщи": {"specialty": "дерматолог", "urgency": "низкий"},
+    "температура|кашель|насморк|горло": {"specialty": "терапевт", "urgency": "средний"},
 }
 
 
@@ -101,5 +95,5 @@ def analyze_symptoms_rules(symptoms: str) -> Dict[str, str]:
     return {
         "specialty": "терапевт",
         "urgency": "средний",
-        "reasoning": "Общие симптомы"
+        "reasoning": "Общие симптомы",
     }
